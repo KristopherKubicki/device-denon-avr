@@ -87,11 +87,30 @@ def parse(String description) {
     
 	def inputCanonical = statusrsp.InputFuncSelect.value.text()
     def inputTmp = []
- 	statusrsp.VideoSelectLists.value.each {
-    	if(it.@index != "ON" && it.@index != "OFF") {
-            inputTmp.push(it.'@index')
-            if(it.toString().trim() == inputCanonical) {     
-            	sendEvent(name: "input", value: it.'@index')
+    //check to see if the VideoSelectLists node is available
+    if(!statusrsp.VideoSelectLists.isEmpty()){
+    	log.debug "VideoSelectLists is available... parsing"
+        log.debug statusrsp.VideoSelectLists
+        statusrsp.VideoSelectLists.value.each {
+            if(it.@index != "ON" && it.@index != "OFF") {
+                inputTmp.push(it.'@index')
+                //log.debug "Adding Input ${it.@index}"
+                if(it.toString().trim() == inputCanonical) {     
+                    sendEvent(name: "input", value: it.'@index')
+                }
+            }
+        }
+    }
+    //if the VideoSelectLists node is not available, let's try the InputFuncList
+    else if(!statusrsp.InputFuncList.isEmpty()){
+    	log.debug "InputFuncList is available... parsing"
+        statusrsp.InputFuncList.value.each {
+            if(it != "ON" && it != "OFF") {
+                inputTmp.push(it)
+                //log.debug "Adding Input ${it}"
+                if(it.toString().trim() == inputCanonical) {     
+                    sendEvent(name: "input", value: it)
+                }
             }
         }
     }
