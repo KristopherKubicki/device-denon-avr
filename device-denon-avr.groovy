@@ -22,7 +22,7 @@ metadata {
         attribute "input", "string"
         attribute "inputChan", "enum"
         
-        command "inputSelect"
+        command "inputSelect", ["string"] //define that inputSelect takes a string of the input name as a parameter
         command "inputNext"
         
       	}
