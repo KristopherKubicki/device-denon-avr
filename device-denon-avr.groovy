@@ -24,6 +24,7 @@ metadata {
         
         command "inputSelect", ["string"] //define that inputSelect takes a string of the input name as a parameter
         command "inputNext"
+        command "toggleMute"
         
       	}
 
@@ -157,6 +158,11 @@ def mute() {
 def unmute() { 
 	sendEvent(name: "mute", value: "unmuted")
 	request('cmd0=PutVolumeMute%2FOFF')
+}
+
+def toggleMute(){
+    if(device.currentValue("mute") == "muted") { unmute() }
+	else { mute() }
 }
 
 def inputNext() { 
