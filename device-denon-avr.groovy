@@ -17,11 +17,14 @@ metadata {
         capability "Actuator"
         capability "Switch" 
         capability "Polling"
-        capability "Music Player"
+        capability "Switch Level"
         
+        attribute "mute", "string"
         attribute "input", "string"
         attribute "inputChan", "enum"
         
+        command "mute"
+        command "unmute"
         command "inputSelect", ["string"] //define that inputSelect takes a string of the input name as a parameter
         command "inputNext"
         command "toggleMute"
@@ -92,9 +95,10 @@ def parse(String description) {
     if(!statusrsp.VideoSelectLists.isEmpty()){
     	log.debug "VideoSelectLists is available... parsing"
         statusrsp.VideoSelectLists.value.each {
+        	log.debug "$it"
             if(it.@index != "ON" && it.@index != "OFF") {
                 inputTmp.push(it.'@index')
-                //log.debug "Adding Input ${it.@index}"
+                log.debug "Adding Input ${it.@index}"
                 if(it.toString().trim() == inputCanonical) {     
                     sendEvent(name: "input", value: it.'@index')
                 }
@@ -118,8 +122,8 @@ def parse(String description) {
     sendEvent(name: "inputChan", value: inputTmp)
     
     if(statusrsp.MasterVolume.value.text()) { 
-    	def float volLevel = statusrsp.MasterVolume.value.toFloat() ?: -40.0
-        volLevel = sprintf("%d",(volLevel + 80) / 9)
+    	def int volLevel = (int) statusrsp.MasterVolume.value.toFloat() ?: -40.0
+        volLevel = (volLevel + 80) * 0.9
         
    		def int curLevel = 36
         try {
@@ -127,7 +131,7 @@ def parse(String description) {
         } catch(NumberFormatException nfe) { 
         	curLevel = 36
         }
-
+	
         if(curLevel != volLevel) {
     		sendEvent(name: "level", value: volLevel)
         }
@@ -138,8 +142,7 @@ def parse(String description) {
 def setLevel(val) {
 	sendEvent(name: "mute", value: "unmuted")     
     sendEvent(name: "level", value: val)
-    
-	def scaledVal = sprintf("%d",val * 0.9 - 80)
+	def int scaledVal = val * 0.9 - 80
 	request("cmd0=PutMasterVolumeSet%2F$scaledVal")
 }
 
@@ -173,7 +176,7 @@ def inputNext() {
 	def cur = device.currentValue("input")   
     def selectedInputs = device.currentValue("inputChan").substring(1,device.currentValue("inputChan").length()-1).split(', ').collect{it}
     selectedInputs.push(selectedInputs[0])
-//    log.debug "SELECTED: $selectedInputs"
+    log.debug "SELECTED: $selectedInputs"
     
     def semaphore = 0
     for(selectedInput in selectedInputs) {
@@ -201,14 +204,12 @@ def refresh() {
 
     def hosthex = convertIPtoHex(destIp)
     def porthex = convertPortToHex(destPort)
-    device.deviceNetworkId = "$hosthex:$porthex"
-    // Get a date string in millis
-    def ourDate = new Date().getTime()
+    device.deviceNetworkId = "$hosthex:$porthex" 
 
     def hubAction = new physicalgraph.device.HubAction(
-			'method': 'GET',
-			'path': "/goform/formMainZone_MainZoneXml.xml_=$ourDate",
-			'headers': [ HOST: "$destIp:$destPort" ] 
+   	 		'method': 'GET',
+    		'path': "/goform/formMainZone_MainZoneXml.xml",
+            'headers': [ HOST: "$destIp:$destPort" ] 
 		) 
         
     hubAction
