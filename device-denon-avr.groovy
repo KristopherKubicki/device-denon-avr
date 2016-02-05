@@ -201,12 +201,14 @@ def refresh() {
 
     def hosthex = convertIPtoHex(destIp)
     def porthex = convertPortToHex(destPort)
-    device.deviceNetworkId = "$hosthex:$porthex" 
+    device.deviceNetworkId = "$hosthex:$porthex"
+    // Get a date string in millis
+    def ourDate = new Date().getTime()
 
     def hubAction = new physicalgraph.device.HubAction(
-   	 		'method': 'GET',
-    		'path': "/goform/formMainZone_MainZoneXml.xml",
-            'headers': [ HOST: "$destIp:$destPort" ] 
+			'method': 'GET',
+			'path': "/goform/formMainZone_MainZoneXml.xml_=$ourDate",
+			'headers': [ HOST: "$destIp:$destPort" ] 
 		) 
         
     hubAction
