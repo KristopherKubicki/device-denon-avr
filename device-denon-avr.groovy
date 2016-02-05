@@ -1,5 +1,5 @@
 /**
- *  Denon Network Receiver
+ *  Denon / Marantz Network Receiver
  *     Works on Network Receivers newer than 2012
  *    SmartThings driver to connect your Denon Network Receiver to SmartThings
  *
@@ -12,7 +12,7 @@ preferences {
  
 
 metadata {
-	definition (name: "Denon Network Receiver", namespace: "KristopherKubicki", 
+	definition (name: "Denon / Marantz Network Receiver", namespace: "KristopherKubicki", 
     	author: "kristopher@acm.org") {
         capability "Actuator"
         capability "Switch" 
@@ -47,7 +47,7 @@ metadata {
             state "muted", label: '${name}', action:"unmute", backgroundColor: "#79b821", icon:"st.Electronics.electronics13"
             state "unmuted", label: '${name}', action:"mute", backgroundColor: "#ffffff", icon:"st.Electronics.electronics13"
 		}
-        controlTile("level", "device.level", "slider", height: 1, width: 2, inactiveLabel: false, range: "(-80..10)") {
+        controlTile("level", "device.level", "slider", height: 1, width: 2, inactiveLabel: false, range: "(0..100)") {
 			state "level", label: '${name}', action:"setLevel"
 		}
         
@@ -91,7 +91,6 @@ def parse(String description) {
     //check to see if the VideoSelectLists node is available
     if(!statusrsp.VideoSelectLists.isEmpty()){
     	log.debug "VideoSelectLists is available... parsing"
-        log.debug statusrsp.VideoSelectLists
         statusrsp.VideoSelectLists.value.each {
             if(it.@index != "ON" && it.@index != "OFF") {
                 inputTmp.push(it.'@index')
@@ -115,17 +114,20 @@ def parse(String description) {
             }
         }
     }
+    
     sendEvent(name: "inputChan", value: inputTmp)
     
     if(statusrsp.MasterVolume.value.text()) { 
     	def float volLevel = statusrsp.MasterVolume.value.toFloat() ?: -40.0
-        log.debug "VOL: $volLevel" 
-   		def int curLevel = -40.0
+        volLevel = sprintf("%d",(volLevel + 80) / 9)
+        
+   		def int curLevel = 36
         try {
         	curLevel = device.currentValue("level")
         } catch(NumberFormatException nfe) { 
-        	curLevel = -40.0
+        	curLevel = 36
         }
+
         if(curLevel != volLevel) {
     		sendEvent(name: "level", value: volLevel)
         }
@@ -137,7 +139,8 @@ def setLevel(val) {
 	sendEvent(name: "mute", value: "unmuted")     
     sendEvent(name: "level", value: val)
     
-    request("cmd0=PutMasterVolumeSet%2F$val")
+	def scaledVal = sprintf("%d",val * 0.9 - 80)
+	request("cmd0=PutMasterVolumeSet%2F$scaledVal")
 }
 
 def on() {
@@ -199,12 +202,10 @@ def refresh() {
     def hosthex = convertIPtoHex(destIp)
     def porthex = convertPortToHex(destPort)
     device.deviceNetworkId = "$hosthex:$porthex" 
-    // Get a date string in millis
-    def ourDate = new Date().getTime()
 
     def hubAction = new physicalgraph.device.HubAction(
-            'method': 'GET',
-            'path': "/goform/formMainZone_MainZoneXml.xml?_=$ourDate",
+   	 		'method': 'GET',
+    		'path': "/goform/formMainZone_MainZoneXml.xml",
             'headers': [ HOST: "$destIp:$destPort" ] 
 		) 
         
