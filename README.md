@@ -1,4 +1,7 @@
 # Denon Network AVR Device Type
+
+> **Legacy note:** This is an older SmartThings/Hubitat-era integration. It remains public for people maintaining classic Groovy SmartApps and device handlers, but it is not actively maintained for the current SmartThings platform.
+
 This is a networked receiver device type for SmartThings.  It allows you to change the input, adjust the volume, mute and turn off/standby your receiver via a SmartApp or the SmartThings UI.
 
 <img src='http://content.abt.com/image.php/3_AVRS910W.jpg?image=/images/products/BDP_Images/3_AVRS910W.jpg&canvas=1&quality=100&min_w=450&min_h=320&ck=371'>
